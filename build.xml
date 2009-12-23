@@ -1,0 +1,27 @@
+<project>
+	<property name="src.dir" 	 value="src" />
+	<property name="build.dir" value="build" />
+	<property name="dist.dir"  value="dist" />
+	<property name="lib.dir"   value="lib" />
+
+	<path id="classpath">
+		<fileset dir="${lib.dir}" includes="**/*.jar" />
+	</path>
+
+	<target name="clean">
+		<delete dir="${build.dir}" />
+		<delete dir="${dist.dir}" />
+	</target>
+
+	<target name="compile">
+		<mkdir dir="${build.dir}" />
+		<javac srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath">
+			<compilerarg value="-Xlint" />
+		</javac>
+	</target>
+
+	<target name="jar">
+		<mkdir dir="${dist.dir}" />
+		<jar destfile="${dist.dir}/solr-spatial.jar" basedir="${build.dir}" />
+	</target>
+</project>
