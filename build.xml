@@ -1,16 +1,34 @@
-<project>
+<project name="solr-spatial">
 	<property name="src.dir" 	 value="src" />
 	<property name="build.dir" value="build" />
 	<property name="dist.dir"  value="dist" />
 	<property name="lib.dir"   value="lib" />
 
+	<property name="test.src.dir"   value="test/src" />
+	<property name="test.build.dir" value="test/build" />
+	<property name="test.lib.dir"   value="test/lib" />
+	<property name="test.solr.dir"  value="test/solr" />
+
+
 	<path id="classpath">
 		<fileset dir="${lib.dir}" includes="**/*.jar" />
 	</path>
 
+	<path id="classpath-test">
+		<path refid="classpath" />
+		<fileset dir="${dist.dir}" includes="*.jar" />
+		<fileset dir="${test.lib.dir}" includes="**/*.jar" />
+	</path>
+
+	<path id="library" location="${dist.dir}/${ant.project.name}.jar" />
+
 	<target name="clean">
 		<delete dir="${build.dir}" />
 		<delete dir="${dist.dir}" />
+	</target>
+
+	<target name="clean-test">
+		<delete dir="${test.build.dir}" />
 	</target>
 
 	<target name="compile">
@@ -20,8 +38,32 @@
 		</javac>
 	</target>
 
-	<target name="jar">
+	<target name="compile-test" depends="jar">
+		<mkdir dir="${test.build.dir}" />
+		<javac srcdir="${test.src.dir}" destdir="${test.build.dir}" classpathref="classpath-test" />
+	</target>
+
+	<target name="install-test" depends="jar">
+		<mkdir dir="${test.solr.dir}/lib" />
+		<copy file="${dist.dir}/${ant.project.name}.jar" todir="${test.solr.dir}/lib" />
+	</target>
+
+	<target name="jar" depends="compile">
 		<mkdir dir="${dist.dir}" />
 		<jar destfile="${dist.dir}/solr-spatial.jar" basedir="${build.dir}" />
+	</target>
+
+	<target name="test" depends="compile-test,install-test">
+		<junit printsummary="yes" outputtoformatters="false">
+			<classpath>
+				<path refid="classpath-test" />
+				<path refid="library" />
+				<pathelement location="${test.build.dir}" />
+			</classpath>
+			<batchtest fork="yes">
+				<fileset dir="${test.src.dir}" includes="**/*Test.java"/>
+				<formatter type="plain" usefile="false" />
+			</batchtest>
+		</junit>
 	</target>
 </project>

@@ -7,11 +7,12 @@ import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanFilter;
 import org.apache.lucene.search.ConstantScoreQuery;
-import org.apache.lucene.search.NumericRangeFilter;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.FilterClause;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
+import org.apache.lucene.search.TermRangeFilter;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.spatial.tier.LatLongDistanceFilter;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.request.SolrQueryRequest;
@@ -45,14 +46,17 @@ public class SpatialQParser extends QParser {
 
 	//TODO Make this method use TrieFields instead.
 	private Filter getBoundingBoxFilter(final double lat, final double lng, final double miles, final String latField, final String lngField) {
-		final double latRadius = miles / 2.0 * DEGREES_TO_MILES;
-		final double lngRadius = miles / 2.0 * DEGREES_TO_MILES * Math.cos(lat);
+		final double latRadius = miles / 2.0 / DEGREES_TO_MILES;
+		final double lngRadius = miles / 2.0 / DEGREES_TO_MILES * Math.cos(lat);
 
 		final BooleanFilter filter = new BooleanFilter();
 
-		filter.add(new FilterClause(NumericRangeFilter.newDoubleRange(latField, new Double(lat - latRadius), new Double(lat + latRadius), true, true), BooleanClause.Occur.MUST));
-		filter.add(new FilterClause(NumericRangeFilter.newDoubleRange(lngField, new Double(lng - lngRadius), new Double(lng + lngRadius), true, true), BooleanClause.Occur.MUST));
+		final Filter latFilter = new TermRangeFilter(latField, NumberUtils.double2sortableStr(lat - latRadius), NumberUtils.double2sortableStr(lat + latRadius), true, true);
+		final Filter lngFilter = new TermRangeFilter(lngField, NumberUtils.double2sortableStr(lng - lngRadius), NumberUtils.double2sortableStr(lng + lngRadius), true, true);
 
-		return filter;
+		filter.add(new FilterClause(latFilter, BooleanClause.Occur.MUST));
+		filter.add(new FilterClause(lngFilter, BooleanClause.Occur.MUST));
+
+		return new QueryWrapperFilter(new MatchAllDocsQuery());
 	}
 }
