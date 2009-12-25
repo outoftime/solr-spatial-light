@@ -11,6 +11,7 @@ import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.FilterClause;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
+import org.apache.lucene.search.NumericRangeFilter;
 import org.apache.lucene.search.TermRangeFilter;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.spatial.tier.LatLongDistanceFilter;
@@ -21,7 +22,7 @@ import org.apache.solr.util.NumberUtils;
 
 public class SpatialQParser extends QParser {
 	private static final Pattern PATTERN = Pattern.compile("^(-?\\d+(\\.\\d+)?),\\s*(-?\\d+(\\.\\d+)?)$");
-	private static final double DEGREES_TO_MILES = 3959.0;
+	private static final double DEGREES_TO_MILES = 69.047;
 
 	public SpatialQParser(String qstr, SolrParams localParams, SolrParams params, SolrQueryRequest req) {
 		super(qstr, localParams, params, req);
@@ -44,19 +45,20 @@ public class SpatialQParser extends QParser {
 		return new ConstantScoreQuery(new LatLongDistanceFilter(startingFilter, lat, lng, miles, latField, lngField));
 	}
 
-	//TODO Make this method use TrieFields instead.
 	private Filter getBoundingBoxFilter(final double lat, final double lng, final double miles, final String latField, final String lngField) {
-		final double latRadius = miles / 2.0 / DEGREES_TO_MILES;
-		final double lngRadius = miles / 2.0 / DEGREES_TO_MILES * Math.cos(lat);
+		final double latRadius = Math.abs(miles / 2.0 / DEGREES_TO_MILES);
+		final double lngRadius = Math.abs(miles / 2.0 / DEGREES_TO_MILES * Math.cos(lat));
 
 		final BooleanFilter filter = new BooleanFilter();
+		
+		filter.add(new FilterClause(getBoundingFilter(latField, lat, latRadius), BooleanClause.Occur.MUST));
+		filter.add(new FilterClause(getBoundingFilter(lngField, lng, lngRadius), BooleanClause.Occur.MUST));
 
-		final Filter latFilter = new TermRangeFilter(latField, NumberUtils.double2sortableStr(lat - latRadius), NumberUtils.double2sortableStr(lat + latRadius), true, true);
-		final Filter lngFilter = new TermRangeFilter(lngField, NumberUtils.double2sortableStr(lng - lngRadius), NumberUtils.double2sortableStr(lng + lngRadius), true, true);
+		return filter;
+	}
 
-		filter.add(new FilterClause(latFilter, BooleanClause.Occur.MUST));
-		filter.add(new FilterClause(lngFilter, BooleanClause.Occur.MUST));
-
-		return new QueryWrapperFilter(new MatchAllDocsQuery());
+	private Filter getBoundingFilter(final String fieldName, final double center, final double radius) {
+		// return new TermRangeFilter(fieldName, new Double(center - radius).toString(), new Double(center + radius).toString(), true, true);
+		return NumericRangeFilter.newDoubleRange(fieldName, 8, new Double(center - radius), new Double(center + radius), true, true);
 	}
 }

@@ -43,17 +43,12 @@
 		<javac srcdir="${test.src.dir}" destdir="${test.build.dir}" classpathref="classpath-test" />
 	</target>
 
-	<target name="install-test" depends="jar">
-		<mkdir dir="${test.solr.dir}/lib" />
-		<copy file="${dist.dir}/${ant.project.name}.jar" todir="${test.solr.dir}/lib" />
-	</target>
-
 	<target name="jar" depends="compile">
 		<mkdir dir="${dist.dir}" />
 		<jar destfile="${dist.dir}/solr-spatial.jar" basedir="${build.dir}" />
 	</target>
 
-	<target name="test" depends="compile-test,install-test">
+	<target name="test" depends="compile-test">
 		<junit printsummary="yes" outputtoformatters="false">
 			<classpath>
 				<path refid="classpath-test" />
