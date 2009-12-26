@@ -22,6 +22,8 @@
 
 	<path id="library" location="${dist.dir}/${ant.project.name}.jar" />
 
+	<taskdef resource="checkstyletask.properties" classpath="extra/checkstyle-all-5.0.jar" />
+
 	<target name="clean">
 		<delete dir="${build.dir}" />
 		<delete dir="${dist.dir}" />
@@ -31,7 +33,16 @@
 		<delete dir="${test.build.dir}" />
 	</target>
 
-	<target name="compile">
+    <target name="checkstyle">
+		<checkstyle config="extra/sun_checks.xml">
+			<fileset dir="${src.dir}" includes="**/*.java" />
+			<classpath>
+                <path refid="classpath" />
+            </classpath>
+		</checkstyle>
+    </target>
+
+	<target name="compile" depends="checkstyle">
 		<mkdir dir="${build.dir}" />
 		<javac srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath">
 			<compilerarg value="-Xlint" />
