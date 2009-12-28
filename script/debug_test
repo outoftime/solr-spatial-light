@@ -1,0 +1,3 @@
+#!/bin/sh
+
+jdb -classpath build:test/build:lib/*:test/lib/* org.junit.runner.JUnitCore $1
