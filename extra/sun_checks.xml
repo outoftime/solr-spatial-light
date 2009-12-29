@@ -183,7 +183,10 @@
         <module name="FinalParameters"/>
         <module name="TodoComment"/>
         <module name="UpperEll"/>
+    </module>
 
+    <module name="SuppressionFilter">
+        <property name="file" value="extra/suppressions.xml"/>
     </module>
 
 </module>

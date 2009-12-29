@@ -19,12 +19,13 @@ abstract class TestHelper {
         return server;
     }
 
-    protected void addLocation(String name, double lat, double lng) throws Exception {
+    protected void addLocation(String name, String latField, String lngField,
+                               double lat, double lng) throws Exception {
         final SolrInputDocument doc = new SolrInputDocument();
         doc.addField("id", new Integer(nextId++).toString());
         doc.addField("name", name);
-        doc.addField("lat", new Double(lat).toString());
-        doc.addField("lng", new Double(lng).toString());
+        doc.addField(latField, new Double(lat).toString());
+        doc.addField(lngField, new Double(lng).toString());
         getServer().add(doc);
     }
 

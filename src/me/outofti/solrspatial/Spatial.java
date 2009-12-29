@@ -31,7 +31,19 @@ public class Spatial extends QParser {
      * Valid query pattern.
      */
     private static final Pattern PATTERN =
-        Pattern.compile("^(-?\\d+(\\.\\d+)?),\\s*(-?\\d+(\\.\\d+)?)$");
+        Pattern.compile(
+                "^((\\w+): ?)?(-?\\d+(\\.\\d+)?)"
+                + ",\\s*((\\w+): ?)?(-?\\d+(\\.\\d+)?)$");
+
+    /**
+     * Default field name for latitude.
+     */
+    public static final String DEFAULT_LAT_FIELD = "lat";
+
+    /**
+     * Default field name for longitude.
+     */
+    public static final String DEFAULT_LNG_FIELD = "lng";
 
     /**
      * Ratio between latitude degrees and statute miles.
@@ -103,11 +115,17 @@ public class Spatial extends QParser {
                         "Spatial queries should be of the format LAT,LNG");
             }
 
-            final double lat = Double.parseDouble(matcher.group(1));
-            final double lng = Double.parseDouble(matcher.group(3));
+            final double lat = Double.parseDouble(matcher.group(3));
+            final double lng = Double.parseDouble(matcher.group(7));
 
-            final String latField = "lat"; //TODO Parse this out of the query
-            final String lngField = "lng"; //TODO Parse this out of the query
+            String latField = matcher.group(2);
+            String lngField = matcher.group(6);
+            if (latField == null) {
+                latField = DEFAULT_LAT_FIELD;
+            }
+            if (lngField == null) {
+                lngField = DEFAULT_LNG_FIELD;
+            }
 
             double miles;
             Filter startingFilter;
