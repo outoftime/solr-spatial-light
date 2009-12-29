@@ -28,14 +28,33 @@ abstract class TestHelper {
         getServer().add(doc);
     }
 
+    protected void assertResults(SolrQuery query, String... names) throws Exception {
+        final SolrDocumentList docs = getServer().query(query).getResults();
+        assertCountMatches(names, docs);
+        for(final String name : names) {
+            boolean success = false;
+            for(int i = 0; i < docs.size(); i++) {
+                if (docs.get(i).getFieldValue("name").toString().equals(name)) {
+                    success = true;
+                    break;
+                }
+            }
+            if (!success) { fail("Expected " + name + " in results"); }
+        }
+    }
+
     protected void assertResultsInOrder(SolrQuery query, String... names) throws Exception {
         final SolrDocumentList docs = getServer().query(query).getResults();
-        assertEquals("It should return " + names.length + " results",
-                     names.length, docs.size());
+        assertCountMatches(names, docs);
         for(int i = 0; i < names.length; i++) {
             final String name = names[i];
             assertEquals("It should return \"" + name + "\" as result " + i,
                          name, docs.get(i).getFieldValue("name").toString());
         }
+    }
+
+    private void assertCountMatches(String[] names, SolrDocumentList docs) throws Exception {
+        assertEquals("It should return " + names.length + " results",
+                     names.length, docs.size());
     }
 }

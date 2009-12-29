@@ -7,10 +7,16 @@ import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanFilter;
 import org.apache.lucene.search.ConstantScoreQuery;
+import org.apache.lucene.search.FieldComparatorSource;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.FilterClause;
+import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
+import org.apache.lucene.spatial.tier.DistanceFilter;
+import org.apache.lucene.spatial.tier.DistanceFieldComparatorSource;
 import org.apache.lucene.spatial.tier.LatLongDistanceFilter;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.request.SolrQueryRequest;
@@ -18,61 +24,121 @@ import org.apache.solr.schema.SchemaField;
 import org.apache.solr.search.QParser;
 
 /**
- * Parse a spatial query into a lucene-spatial LatLongDistanceFilter.
- *
- * See SpatialQParserPlugin for details.
+ * Encapsulates a spatial query component.
  */
-public class SpatialQParser extends QParser {
+public class Spatial extends QParser {
     /**
      * Valid query pattern.
      */
     private static final Pattern PATTERN =
         Pattern.compile("^(-?\\d+(\\.\\d+)?),\\s*(-?\\d+(\\.\\d+)?)$");
+
     /**
      * Ratio between latitude degrees and statute miles.
      */
     private static final double DEGREES_TO_MILES = 69.047;
 
     /**
-     * Delegate to the superclass constructor.
+     * Default radius for search.
+     *
+     * Use half of earth's circumference, making the filter essentially a
+     * no-op. We do this because the filter might still be used for sorting,
+     * and it needs to be used for the distances to lazy-load.
+     */
+    private static final double DEFAULT_RADIUS = 24901.46;
+
+    /**
+     * Store memoized response of getDistanceFilter() method.
+     */
+    private DistanceFilter distanceFilter;
+
+    /**
+     * Store memoized response of getSort() method.
+     */
+    private Sort sort;
+
+    /**
+     * Construct the object using the superclass arguments.
      *
      * @param qstr        query string
      * @param localParams local parameters
-     * @param params      query parameters
-     * @param req         query request
-     *
+     * @param params      global params
+     * @param req         request
      */
-    public SpatialQParser(final String qstr, final SolrParams localParams,
-                          final SolrParams params, final SolrQueryRequest req) {
+    public Spatial(final String qstr, final SolrParams localParams,
+                   final SolrParams params, final SolrQueryRequest req) {
         super(qstr, localParams, params, req);
     }
 
     /**
-     * Parse the query.
+     * Return the distance filter as a Query.
      *
-     * @throws ParseException if query is not of the format LAT,LNG.
-     * @return distance query
+     * @throws ParseException if query formatting is bad
+     * @return distance filter wrapped in Query
      */
     public final Query parse() throws ParseException {
-        final Matcher matcher = PATTERN.matcher(qstr);
-        if (!matcher.matches()) {
-            throw new ParseException(
-                    "Spatial queries should be of the format LAT,LNG");
+        return new ConstantScoreQuery(getDistanceFilter());
+    }
+
+    /**
+     * Build a distance filter out of a spatial query string.
+     *
+     * @throws ParseException if query formatting is bad
+     * @return a distance filter
+     */
+    public final DistanceFilter getDistanceFilter() throws ParseException {
+        if (distanceFilter == null) {
+            String latLng;
+            Float maybeMiles = null;
+            if (localParams == null) {
+                latLng = qstr;
+            } else {
+                latLng = localParams.get("v");
+                maybeMiles = localParams.getFloat("radius");
+            }
+
+            final Matcher matcher = PATTERN.matcher(qstr);
+            if (!matcher.matches()) {
+                throw new ParseException(
+                        "Spatial queries should be of the format LAT,LNG");
+            }
+
+            final double lat = Double.parseDouble(matcher.group(1));
+            final double lng = Double.parseDouble(matcher.group(3));
+
+            final String latField = "lat"; //TODO Parse this out of the query
+            final String lngField = "lng"; //TODO Parse this out of the query
+
+            double miles;
+            Filter startingFilter;
+            if (maybeMiles == null) {
+                miles = DEFAULT_RADIUS;
+                startingFilter =
+                    new QueryWrapperFilter(new MatchAllDocsQuery());
+            } else {
+                miles = maybeMiles.doubleValue();
+                startingFilter =
+                    getBoundingBoxFilter(lat, lng, miles, latField, lngField);
+            }
+            distanceFilter = new LatLongDistanceFilter(
+                    startingFilter, lat, lng, miles, latField, lngField);
         }
+        return distanceFilter;
+    }
 
-        final double lat = Double.parseDouble(matcher.group(1));
-        final double lng = Double.parseDouble(matcher.group(3));
-
-        final double miles = (double) localParams.getFloat("radius", 1.0F);
-        final String latField = localParams.get("latField", "lat");
-        final String lngField = localParams.get("lngField", "lng");
-
-        final Filter startingFilter = getBoundingBoxFilter(lat, lng, miles,
-                                                           latField, lngField);
-        return new ConstantScoreQuery(new LatLongDistanceFilter(startingFilter,
-                                                                lat, lng, miles,
-                                                                latField,
-                                                                lngField));
+    /**
+     * Return a sort by distance based on the distance filter.
+     *
+     * @throws ParseException if params are malformed
+     * @return sort by distance
+     */
+    public final Sort getSort() throws ParseException {
+        if (sort == null) {
+            final FieldComparatorSource dfcs =
+                new DistanceFieldComparatorSource(getDistanceFilter());
+            sort = new Sort(new SortField("dummy", dfcs));
+        }
+        return sort;
     }
 
     /**
