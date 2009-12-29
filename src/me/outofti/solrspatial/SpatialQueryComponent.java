@@ -12,8 +12,49 @@ import org.apache.solr.search.QueryParsing;
 import org.apache.solr.search.SortSpec;
 
 /**
- * A query component that handles spatial queries and adds the appropriate
- * filter and/or sort.
+ * Solr support for spatial search.
+ *
+ * This query component extends Solr to support the lucene-spatial contrib,
+ * which allows filtering and/or sorting based on geographical distance from a
+ * given latitude and longitude.
+ *
+ * All spatial information is passed in the "spatial" parameter, which takes
+ * the usual local param format. The following local params are accepted:
+ *
+ * <dt>radius</dt>
+ * <dd>Radius in miles to which to filter the search results, as a float. By
+ * default, results are not filtered geographically.</dd>
+ * <dt>sort</dt>
+ * <dd>true or false: whether to sort the results by distance from the
+ * centerpoint. If other sorts are specified via the "sort" parameter, they
+ * will take precedence over the geographical sort.</dd>
+ *
+ * As the above indicates, if no local parameters are passed, the spatial
+ * component has no effect (except on performance).
+ *
+ * The query itself specifies the geographical centerpoint and, optionally,
+ * the names of the latitude and longitude fields to be searched, in the 
+ * format <strong>[latField:]lat,[lngField:]lng</strong> . If the field names
+ * are not specified, they default to <strong>lat</strong> and
+ * <strong>lng</strong>.
+ *
+ * The latitude and longitude fields <strong>must be of the type
+ * TrieDoubleField</strong>.
+ *
+ * <h4>Examples</h4>
+ *
+ * <dt>{!radius=10.0}40.65,-73.95</dt>
+ * <dd>
+ *   Filter results to documents whose <strong>lat</strong> and
+ *   <strong>lng</strong> fields contain a point within 10 miles of
+ *   &lt;40.65,-73.95&gt;.
+ * </dd>
+ * <dt>{!sort=true}latitude:40.65,longitude:-73.95</dt>
+ * <dd>
+ *   Sort results in ascending order of proximity to &lt;40.65,-73.95&gt;
+ *   as indexed in their <strong>latitude</strong> and
+ *   <strong>longitude</strong> fields.
+ * </dd>
  */
 public class SpatialQueryComponent extends SearchComponent {
     /**
