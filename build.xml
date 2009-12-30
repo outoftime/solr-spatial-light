@@ -7,8 +7,9 @@
 	<property name="test.src.dir"   value="test/src" />
 	<property name="test.build.dir" value="test/build" />
 	<property name="test.lib.dir"   value="test/lib" />
-	<property name="test.solr.dir"  value="test/solr" />
 
+    <property name="benchmark.src.dir"   value="perf/src" />
+    <property name="benchmark.build.dir" value="perf/build" />
 
 	<path id="classpath">
 		<fileset dir="${lib.dir}" includes="**/*.jar" />
@@ -19,6 +20,11 @@
 		<fileset dir="${dist.dir}" includes="*.jar" />
 		<fileset dir="${test.lib.dir}" includes="**/*.jar" />
 	</path>
+
+    <path id="classpath-benchmark">
+        <path refid="classpath-test" />
+        <path location="${test.build.dir}" />
+    </path>
 
 	<path id="library" location="${dist.dir}/${ant.project.name}.jar" />
 
@@ -32,6 +38,12 @@
 	<target name="clean-test">
 		<delete dir="${test.build.dir}" />
 	</target>
+
+    <target name="clean-benchmark">
+        <delete dir="${benchmark.build.dir}" />
+    </target>
+
+    <target name="clean-all" depends="clean,clean-test,clean-benchmark" />
 
     <target name="checkstyle">
 		<checkstyle config="extra/sun_checks.xml">
@@ -54,6 +66,11 @@
 		<javac srcdir="${test.src.dir}" destdir="${test.build.dir}" classpathref="classpath-test" />
 	</target>
 
+    <target name="compile-benchmark" depends="compile-test">
+        <mkdir dir="${benchmark.build.dir}" />
+        <javac srcdir="${benchmark.src.dir}" destdir="${benchmark.build.dir}" classpathref="classpath-benchmark" />
+    </target>
+
 	<target name="jar" depends="compile">
 		<mkdir dir="${dist.dir}" />
 		<jar destfile="${dist.dir}/solr-spatial.jar" basedir="${build.dir}" />
@@ -72,4 +89,14 @@
 			</batchtest>
 		</junit>
 	</target>
+
+    <target name="benchmark" depends="compile-benchmark">
+        <java fork="true" classname="me.outofti.solrspatial.BenchmarkRunner">
+            <classpath>
+                <path refid="classpath-benchmark" />
+                <path location="${benchmark.build.dir}" />
+            </classpath>
+        </java>
+
+    </target>
 </project>

@@ -30,6 +30,10 @@ abstract class TestHelper {
         getServer().add(doc);
     }
 
+    protected void addLocation(String name, double rating, double lat, double lng) throws Exception {
+        addLocation(name, "lat", "lng", rating, lat, lng);
+    }
+
     protected void assertResults(SolrQuery query, String... names) throws Exception {
         final SolrDocumentList docs = getServer().query(query).getResults();
         assertCountMatches(names, docs);

@@ -16,6 +16,7 @@ class EmbeddedSolrServerFactory {
     public static EmbeddedSolrServerFactory getInstance() {
         if(instance == null) {
             System.setProperty("solr.solr.home", "/home/mat/src/solr-spatial/test/solr"); //TODO Figure out how to make relative
+            System.setProperty("java.util.logging.config.file", "home/mat/src/solr-spatial/test/logging.properties");
             instance = new EmbeddedSolrServerFactory();
         }
         return instance;
