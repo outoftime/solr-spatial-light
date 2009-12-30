@@ -4,4 +4,77 @@ solr-spatial is a lightweight Solr plugin that exposes the geographical search
 capabilities of lucene-spatial. Its aim is to be unobtrusive, unopinionated,
 and semantic.
 
-solr-spatial is a work in progress.
+### Installation and Setup
+
+First, clone the latest source from GitHub:
+
+    $ git clone git://github.com/outoftime/solr-spatial.git
+
+If you don't have git and don't want to install it, you can also download a
+tarball or zip archive from http://github.com/outoftime/solr-spatial (look for
+the "Download Source" link.
+
+Next, build the application and copy the jars into your solr installation:
+
+    $ cd solr-spatial
+    $ ant
+    $ cp dist/solr-spatial.jar lib/lucene-spatial-2.9.1-dev.jar $SOLR_HOME/lib
+
+Replace `$SOLR_HOME` with the directory that contains your `conf/` and (maybe)
+`data/` directories. It might not have a `lib/` directory; you should create it.
+Don't confuse this with the topmost folder of the example Solr install, which
+also contains a `lib/` directory (along with `start.jar`).
+
+Now, you'll need to add the solr-spatial search component to your
+solrconfig.xml:
+
+    <searchComponent name="spatial" class="me.outofti.solrspatial.SpatialQueryComponent" />
+
+Then you'll need to add that search component into your standard request
+handler. Look for the node &lt;requestHandler name="standard" ...&gt; node in
+your `solrconfig.xml`, and add the spatial component as follows:
+
+    <requestHandler name="standard" class="solr.searchHandler" default="true">
+      <arr name="last-components">
+        <str>spatial</str>
+      </arr>
+    </requestHandler>
+
+Your schema.xml will need a latitude field and a longitude field of type
+`TrieDoubleField`. These can be called whatever you'd like, but the default is
+`"lat"` and `"lng"`, so here's that:
+
+    <field name="lat"  type="tdouble" indexed="true" stored="false" />
+    <field name="lng"  type="tdouble" indexed="true" stored="false" />
+
+And you're done.
+
+### Performing spatial searches
+
+solr-spatial allows you to perform distance-based filtering and sorting. In any
+given search, you can filter, sort, or do both (or neither) based on distance
+from a given geographical location. The entire spatial component of your search
+is specified in the `spatial` parameter. Here's an example of what the spatial
+parameter would look like:
+
+    spatial={!radius=10.0 sort=true}lat:40.0,lng:-70.0
+
+This will instruct solr-spatial to only return results whose `"lat"` and `"lng"`
+fields contain coordinates within 10 miles of &lt;40,-70&gt;, and to sort the
+results in ascending order of distance from that location. Both the `radius` and
+the `sort` local parameters are optional; however, if neither is specified, then
+the spatial request will have no effect other than a performance penalty. Note
+also that `"lat"` and `"lng"` are the default field names for those fields, and thus
+can be omitted in this case (`"40.0,-70.0"` would have been equivalent). They
+are included here for clarity.
+
+You can combine spatial sorting with other sorts. If you specify one or more
+field sorts in the `sort` parameter, they will take precedence over spatial
+sort. This is because it is unlikely that any two documents will have equal
+distance from the centerpoint; thus giving spatial sort precedence over any
+other sort would have the same effect as removing that sort altogether.
+
+### Feedback, etc.
+
+Feedback, suggestions, bug reports, mild insults, etc. are extremely welcome.
+Please deliver them via a GitHub message.

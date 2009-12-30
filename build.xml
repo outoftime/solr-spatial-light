@@ -1,4 +1,4 @@
-<project name="solr-spatial">
+<project name="solr-spatial" default="jar">
 	<property name="src.dir" 	 value="src" />
 	<property name="build.dir" value="build" />
 	<property name="dist.dir"  value="dist" />
