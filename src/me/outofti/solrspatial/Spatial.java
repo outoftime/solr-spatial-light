@@ -13,7 +13,6 @@ import org.apache.lucene.search.FilterClause;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
-import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.lucene.spatial.tier.DistanceFilter;
 import org.apache.lucene.spatial.tier.DistanceFieldComparatorSource;
@@ -65,9 +64,9 @@ public class Spatial extends QParser {
     private DistanceFilter distanceFilter;
 
     /**
-     * Store memoized response of getSort() method.
+     * Store memoized response of getSortField() method.
      */
-    private Sort sort;
+    private SortField sortField;
 
     /**
      * Construct the object using the superclass arguments.
@@ -150,13 +149,14 @@ public class Spatial extends QParser {
      * @throws ParseException if params are malformed
      * @return sort by distance
      */
-    public final Sort getSort() throws ParseException {
-        if (sort == null) {
+    public final SortField getSortField()
+        throws ParseException {
+        if (sortField == null) {
             final FieldComparatorSource dfcs =
                 new DistanceFieldComparatorSource(getDistanceFilter());
-            sort = new Sort(new SortField("dummy", dfcs));
+            sortField = new SortField("dummy", dfcs);
         }
-        return sort;
+        return sortField;
     }
 
     /**

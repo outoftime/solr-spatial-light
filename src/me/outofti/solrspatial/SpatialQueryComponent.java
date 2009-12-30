@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.FilteredQuery;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.handler.component.SearchComponent;
@@ -21,19 +23,29 @@ import org.apache.solr.search.SortSpec;
  * All spatial information is passed in the "spatial" parameter, which takes
  * the usual local param format. The following local params are accepted:
  *
- * <dt>radius</dt>
- * <dd>Radius in miles to which to filter the search results, as a float. By
- * default, results are not filtered geographically.</dd>
- * <dt>sort</dt>
- * <dd>true or false: whether to sort the results by distance from the
- * centerpoint. If other sorts are specified via the "sort" parameter, they
- * will take precedence over the geographical sort.</dd>
+ * <table>
+ *   <tr>
+ *     <th>radius</th>
+ *     <td>
+ *       Radius in miles to which to filter the search results, as a float. By
+ *       default, results are not filtered geographically.
+ *     </td>
+ *   </tr>
+ *   <tr>
+ *     <th>sort</th>
+ *     <td>
+ *       true or false: whether to sort the results by distance from the
+ *       centerpoint. If other sorts are specified via the "sort" parameter,
+ *       they will take precedence over the geographical sort.
+ *     </td>
+ *   </tr>
+ * </table>
  *
  * As the above indicates, if no local parameters are passed, the spatial
  * component has no effect (except on performance).
  *
  * The query itself specifies the geographical centerpoint and, optionally,
- * the names of the latitude and longitude fields to be searched, in the 
+ * the names of the latitude and longitude fields to be searched, in the
  * format <strong>[latField:]lat,[lngField:]lng</strong> . If the field names
  * are not specified, they default to <strong>lat</strong> and
  * <strong>lng</strong>.
@@ -43,18 +55,25 @@ import org.apache.solr.search.SortSpec;
  *
  * <h4>Examples</h4>
  *
- * <dt>{!radius=10.0}40.65,-73.95</dt>
- * <dd>
- *   Filter results to documents whose <strong>lat</strong> and
- *   <strong>lng</strong> fields contain a point within 10 miles of
- *   &lt;40.65,-73.95&gt;.
- * </dd>
- * <dt>{!sort=true}latitude:40.65,longitude:-73.95</dt>
- * <dd>
- *   Sort results in ascending order of proximity to &lt;40.65,-73.95&gt;
- *   as indexed in their <strong>latitude</strong> and
- *   <strong>longitude</strong> fields.
- * </dd>
+ * <table>
+ *   <tr>
+ *     <th>{!radius=10.0}40.65,-73.95</th>
+ *     <td>
+ *       Filter results to documents whose <strong>lat</strong> and
+ *       <strong>lng</strong> fields contain a point within 10 miles of
+ *       &lt;40.65,-73.95&gt;.
+ *     </td>
+ *   </tr>
+ *   <tr>
+ *     <th>{!sort=true}latitude:40.65,longitude:-73.95</th>
+ *     <td>
+ *       Sort results in ascending order of proximity to &lt;40.65,-73.95&gt;
+ *       as indexed in their <strong>latitude</strong> and
+ *       <strong>longitude</strong> fields.
+ *     </td>
+ *   </tr>
+ * </table>
+ *
  */
 public class SpatialQueryComponent extends SearchComponent {
     /**
@@ -120,6 +139,9 @@ public class SpatialQueryComponent extends SearchComponent {
     /**
      * Attach a distance sort to the search.
      *
+     * If no search is specified, then distance sort becomes the sole sort. If
+     * a search is specified, then distance sort is attached as the *last* sort.
+     *
      * @param rb      response builder
      * @param spatial spatial query parser
      *
@@ -128,15 +150,23 @@ public class SpatialQueryComponent extends SearchComponent {
     private void attachSort(final ResponseBuilder rb,
                             final Spatial spatial)
         throws ParseException {
-        SortSpec sortSpec = rb.getSortSpec();
+        final SortSpec sortSpec = rb.getSortSpec();
+        final Sort sort = sortSpec.getSort();
+        final SortField sortField = spatial.getSortField();
 
-        if (sortSpec == null) {
-            //FIXME get the actual count
-            sortSpec = new SortSpec(spatial.getSort(), DEFAULT_COUNT);
-            rb.setSortSpec(sortSpec);
+        if (sort == null) {
+            sortSpec.setSort(new Sort(sortField));
         } else {
-            //FIXME don't clobber existing sort
-            sortSpec.setSort(spatial.getSort());
+            final SortField[] existingSortFields = sort.getSort();
+            final SortField[] sortFields =
+                new SortField[existingSortFields.length + 1];
+            int i;
+            for (i = 0; i < existingSortFields.length; i++) {
+                sortFields[i] = existingSortFields[i];
+            }
+            sortFields[i] = sortField;
+            sortSpec.setSort(new Sort(sortFields));
+            System.out.println("");
         }
     }
 

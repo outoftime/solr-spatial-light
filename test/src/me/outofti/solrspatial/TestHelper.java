@@ -20,10 +20,11 @@ abstract class TestHelper {
     }
 
     protected void addLocation(String name, String latField, String lngField,
-                               double lat, double lng) throws Exception {
+                               double rating, double lat, double lng) throws Exception {
         final SolrInputDocument doc = new SolrInputDocument();
         doc.addField("id", new Integer(nextId++).toString());
         doc.addField("name", name);
+        doc.addField("rating", rating);
         doc.addField(latField, new Double(lat).toString());
         doc.addField(lngField, new Double(lng).toString());
         getServer().add(doc);
