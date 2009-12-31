@@ -26,7 +26,7 @@ Next, build the application and copy the jars into your solr installation:
 
     $ cd solr-spatial
     $ ant
-    $ cp dist/solr-spatial.jar lib/lucene-spatial-2.9.1-dev.jar $SOLR_HOME/lib
+    $ cp dist/solr-spatial-X.X.X.jar lib/lucene-spatial-2.9.1-dev.jar $SOLR_HOME/lib
 
 Replace `$SOLR_HOME` with the directory that contains your `conf/` and (maybe)
 `data/` directories. It might not have a `lib/` directory; you should create it.
