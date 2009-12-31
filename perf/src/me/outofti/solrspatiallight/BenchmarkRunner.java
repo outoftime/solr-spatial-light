@@ -1,4 +1,4 @@
-package me.outofti.solrspatial;
+package me.outofti.solrspatiallight;
 
 public class BenchmarkRunner {
     private static final int RUNS = 100;

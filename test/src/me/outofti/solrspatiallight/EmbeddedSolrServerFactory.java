@@ -1,4 +1,4 @@
-package me.outofti.solrspatial;
+package me.outofti.solrspatiallight;
 
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;

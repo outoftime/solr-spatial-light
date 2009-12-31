@@ -1,4 +1,4 @@
-package me.outofti.solrspatial;
+package me.outofti.solrspatiallight;
 
 import org.apache.solr.client.solrj.SolrQuery;
 

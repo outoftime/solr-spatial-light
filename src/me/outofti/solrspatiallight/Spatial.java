@@ -1,4 +1,4 @@
-package me.outofti.solrspatial;
+package me.outofti.solrspatiallight;
 
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;

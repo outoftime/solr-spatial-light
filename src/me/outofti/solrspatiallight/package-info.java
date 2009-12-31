@@ -4,4 +4,4 @@
  * This package provides a query parser plugin for performing Solr queries
  * with restriction by distance from a given lat/lng.
  */
-package me.outofti.solrspatial;
+package me.outofti.solrspatiallight;
