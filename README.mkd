@@ -1,8 +1,16 @@
 ## solr-spatial
 
-solr-spatial is a lightweight Solr plugin that exposes the geographical search
-capabilities of lucene-spatial. Its aim is to be unobtrusive, unopinionated,
-and semantic.
+solr-spatial is a lightweight Solr plugin that exposes the basic geographical
+search capabilities of lucene-spatial. Its aim is to be unobtrusive,
+unopinionated, and semantic.
+
+Much work is being done to build robust spatial search into Solr 1.5. This
+plugin is not intended as a replacement for or alternative to that work; rather,
+its purpose is to provide a rough and ready solution to perform spatial search
+with Solr 1.4 until the real deal is released. More on the Solr 1.5 spatial
+support here:
+
+http://issues.apache.org/jira/browse/SOLR-773
 
 ### Installation and Setup
 
