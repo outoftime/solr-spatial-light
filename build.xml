@@ -1,15 +1,18 @@
 <project name="solr-spatial" default="jar">
+	<property name="version.num" value="0.0.1" />
+
 	<property name="src.dir" 	 value="src" />
 	<property name="build.dir" value="build" />
 	<property name="dist.dir"  value="dist" />
 	<property name="lib.dir"   value="lib" />
+	<property name="jar.name"  value="${ant.project.name}-${version.num}.jar" />
 
 	<property name="test.src.dir"   value="test/src" />
 	<property name="test.build.dir" value="test/build" />
 	<property name="test.lib.dir"   value="test/lib" />
 
-    <property name="benchmark.src.dir"   value="perf/src" />
-    <property name="benchmark.build.dir" value="perf/build" />
+  <property name="benchmark.src.dir"   value="perf/src" />
+  <property name="benchmark.build.dir" value="perf/build" />
 
 	<path id="classpath">
 		<fileset dir="${lib.dir}" includes="**/*.jar" />
@@ -73,7 +76,11 @@
 
 	<target name="jar" depends="compile">
 		<mkdir dir="${dist.dir}" />
-		<jar destfile="${dist.dir}/solr-spatial.jar" basedir="${build.dir}" />
+		<manifest file="MANIFEST.MF">
+			<attribute name="Built-By" value="${user.name}" />
+			<attribute name="Implementation-Version" value="${version.num}" />
+		</manifest>
+		<jar destfile="${dist.dir}/${jar.name}" basedir="${build.dir}" manifest="MANIFEST.MF" />
 	</target>
 
 	<target name="test" depends="compile-test">
