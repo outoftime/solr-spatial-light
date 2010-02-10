@@ -59,19 +59,19 @@
 
 	<target name="compile" depends="checkstyle">
 		<mkdir dir="${build.dir}" />
-		<javac srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath" debug="on">
+		<javac srcdir="${src.dir}" destdir="${build.dir}" classpathref="classpath" debug="on" target="1.5">
 			<compilerarg value="-Xlint" />
 		</javac>
 	</target>
 
 	<target name="compile-test" depends="jar">
 		<mkdir dir="${test.build.dir}" />
-		<javac srcdir="${test.src.dir}" destdir="${test.build.dir}" classpathref="classpath-test" />
+		<javac srcdir="${test.src.dir}" destdir="${test.build.dir}" classpathref="classpath-test" target="1.5"/>
 	</target>
 
     <target name="compile-benchmark" depends="compile-test">
         <mkdir dir="${benchmark.build.dir}" />
-        <javac srcdir="${benchmark.src.dir}" destdir="${benchmark.build.dir}" classpathref="classpath-benchmark" />
+        <javac srcdir="${benchmark.src.dir}" destdir="${benchmark.build.dir}" classpathref="classpath-benchmark" target="1.5"/>
     </target>
 
 	<target name="jar" depends="compile">
