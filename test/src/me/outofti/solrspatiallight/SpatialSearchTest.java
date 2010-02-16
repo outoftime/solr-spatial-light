@@ -25,6 +25,14 @@ public class SpatialSearchTest extends TestHelper {
         assertResults(query, "New York", "Brooklyn");
     }
 
+    @Test public void withOtherFilters() throws Exception {
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.add("spatial", "{!radius=12}40.7142691, -74.0059729");
+        query.addFilterQuery("rating:4.0");
+        assertResults(query, "New York", "Staten Island");
+    }
+
     @Test public void simpleDistanceSorting() throws Exception {
         addStandardFixtures();
         final SolrQuery query = new SolrQuery();
@@ -48,6 +56,17 @@ public class SpatialSearchTest extends TestHelper {
         query.addSortField("rating", SolrQuery.ORDER.desc);
         assertResultsInOrder(query, "Brooklyn", "New York", "Staten Island",
                              "Yonkers");
+    }
+
+    @Test public void dismaxWithSpatialSorting() throws Exception {
+        addLocation("New Haven", 5.0, 41.3081527, -72.9281577);
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.add("defType", "dismax");
+        query.add("q", "new");
+        query.add("qf", "name_t other_t");
+        query.add("spatial", "{!sort=true}40.7142691, -74.0059729");
+        assertResults(query, "New York", "New Haven");
     }
 
     private void addStandardFixtures() throws Exception {

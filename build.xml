@@ -98,7 +98,7 @@
 	</target>
 
     <target name="benchmark" depends="compile-benchmark">
-        <java fork="true" classname="me.outofti.solrspatial.BenchmarkRunner">
+        <java fork="true" classname="me.outofti.solrspatiallight.BenchmarkRunner">
             <classpath>
                 <path refid="classpath-benchmark" />
                 <path location="${benchmark.build.dir}" />

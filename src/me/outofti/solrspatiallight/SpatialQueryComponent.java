@@ -1,9 +1,12 @@
 package me.outofti.solrspatiallight;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.FilteredQuery;
+import org.apache.lucene.search.ConstantScoreQuery;
+import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -132,8 +135,12 @@ public class SpatialQueryComponent extends SearchComponent {
     private void attachDistanceFilter(final ResponseBuilder rb,
                                             final Spatial spatial)
         throws ParseException {
-        rb.setQuery(new FilteredQuery(rb.getQuery(),
-                                      spatial.getDistanceFilter()));
+        List<Query> filters = rb.getFilters();
+        if (filters == null) {
+            filters = new ArrayList<Query>();
+            rb.setFilters(filters);
+        }
+        filters.add(new ConstantScoreQuery(spatial.getDistanceFilter()));
     }
 
     /**

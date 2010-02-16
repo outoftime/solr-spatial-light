@@ -14,7 +14,7 @@ abstract class TestHelper {
     protected SolrServer getServer() throws Exception {
         if(server == null) {
             server = EmbeddedSolrServerFactory.getInstance().getServer();
-            server.deleteByQuery("*:*");
+            server.deleteByQuery("id:[* TO *]");
         }
         return server;
     }
@@ -25,6 +25,7 @@ abstract class TestHelper {
         doc.addField("id", new Integer(nextId++).toString());
         doc.addField("name", name);
         doc.addField("rating", rating);
+        doc.addField("name_t", name);
         doc.addField(latField, new Double(lat).toString());
         doc.addField(lngField, new Double(lng).toString());
         getServer().add(doc);
