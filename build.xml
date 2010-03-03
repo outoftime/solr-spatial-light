@@ -1,5 +1,5 @@
 <project name="solr-spatial-light" default="jar">
-	<property name="version.num" value="0.0.1" />
+	<property name="version.num" value="0.0.2" />
 
 	<property name="src.dir" 	 value="src" />
 	<property name="build.dir" value="build" />
