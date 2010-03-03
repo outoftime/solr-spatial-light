@@ -176,8 +176,8 @@ public class Spatial extends QParser {
                                         final String latField,
                                         final String lngField) {
         final double latRadius = Math.abs(miles / DEGREES_TO_MILES);
-        final double lngRadius = Math.abs(miles / DEGREES_TO_MILES
-                                          * Math.cos(lat));
+        final double lngRadius = Math.abs(miles / (DEGREES_TO_MILES
+                                          * Math.cos(Math.toRadians(lat))));
 
         final BooleanFilter filter = new BooleanFilter();
 

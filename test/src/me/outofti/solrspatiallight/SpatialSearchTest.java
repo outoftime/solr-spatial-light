@@ -28,7 +28,7 @@ public class SpatialSearchTest extends TestHelper {
     @Test public void withOtherFilters() throws Exception {
         addStandardFixtures();
         final SolrQuery query = new SolrQuery();
-        query.add("spatial", "{!radius=12}40.7142691, -74.0059729");
+        query.add("spatial", "{!radius=15}40.7142691, -74.0059729");
         query.addFilterQuery("rating:4.0");
         assertResults(query, "New York", "Staten Island");
     }
