@@ -3,12 +3,16 @@ package me.outofti.solrspatiallight;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
+import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.ConstantScoreQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
+import org.apache.lucene.spatial.tier.DistanceFilter;
 import org.apache.solr.common.params.ModifiableSolrParams;
 import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.handler.component.SearchComponent;
@@ -96,6 +100,7 @@ public class SpatialQueryComponent extends SearchComponent {
      *
      * @throws IOException if param is badly formed
      */
+    @Override
     public final void prepare(final ResponseBuilder rb) throws IOException {
         final String queryWithLocalParams = rb.req.getParams().get(PARAM);
         if (queryWithLocalParams == null) { return; }
@@ -122,7 +127,31 @@ public class SpatialQueryComponent extends SearchComponent {
      *
      * @param rb the response builder
      */
-    public final void process(final ResponseBuilder rb) { }
+    @Override
+    public final void process(final ResponseBuilder rb) {
+        final DistanceFilter distanceFilter =
+            (DistanceFilter) rb.req.getContext().get("distanceFilter");
+        if (distanceFilter != null) {
+            final Map<String, Double> distancesById =
+                new HashMap<String, Double>();
+            final Map<Integer, Double> distances =
+                distanceFilter.getDistances();
+            final String uniqueKeyFieldName =
+                rb.req.getSchema().getUniqueKeyField().getName();
+            for (Integer i : distances.keySet()) {
+                try {
+                    final Document doc = rb.req.getSearcher().doc(i);
+                    // FIXME Should not assume "id" field is primary key
+                    distancesById.put(
+                            doc.getField(uniqueKeyFieldName).stringValue(),
+                            distances.get(i));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            rb.rsp.add("distances", distancesById);
+        }
+    }
 
     /**
      * Attach the distance filter to the query.
@@ -140,6 +169,8 @@ public class SpatialQueryComponent extends SearchComponent {
             filters = new ArrayList<Query>();
             rb.setFilters(filters);
         }
+        final DistanceFilter distanceFilter = spatial.getDistanceFilter();
+        rb.req.getContext().put("distanceFilter", distanceFilter);
         filters.add(new ConstantScoreQuery(spatial.getDistanceFilter()));
     }
 

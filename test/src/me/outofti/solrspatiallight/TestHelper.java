@@ -1,7 +1,10 @@
 package me.outofti.solrspatiallight;
 
+import java.util.Map;
+
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrInputDocument;
 
@@ -57,6 +60,22 @@ abstract class TestHelper {
             final String name = names[i];
             assertEquals("It should return \"" + name + "\" as result " + i,
                          name, docs.get(i).getFieldValue("name").toString());
+        }
+    }
+
+    protected void assertResultDistancesInOrder(SolrQuery query) throws Exception {
+        final QueryResponse response = getServer().query(query);
+        final SolrDocumentList docs = response.getResults();
+        final Map distances =
+            (Map) response.getResponse().get("distances");
+        Double lastDistance = null;
+        for(int i = 0; i < docs.size(); i++) {
+            final Double distance = new Double(distances.get(docs.get(i).getFieldValue("id")).toString());
+            assertNotNull(distance);
+            if (lastDistance != null) {
+                assertTrue(lastDistance < distance);
+            }
+            lastDistance = distance;
         }
     }
 

@@ -2,8 +2,14 @@ package me.outofti.solrspatiallight;
 
 import org.junit.Test;
 
+import java.util.Map;
+
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.common.SolrDocumentList;
+
+
+import static org.junit.Assert.*;
 
 public class SpatialSearchTest extends TestHelper {
     private static String STANDARD_LAT_FIELD = "lat";
@@ -67,6 +73,32 @@ public class SpatialSearchTest extends TestHelper {
         query.add("qf", "name_t other_t");
         query.add("spatial", "{!sort=true}40.7142691, -74.0059729");
         assertResults(query, "New York", "New Haven");
+    }
+
+    @Test public void sortsByDistanceWithDismax() throws Exception {
+        addLocation("New Haven", 5.0, 41.3081527, -72.9281577);
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.add("defType", "dismax");
+        query.add("q", "new haven");
+        query.add("qf", "name_t other_t");
+        query.add("mm", "1");
+        query.add("spatial", "{!sort=true}40.7142691, -74.0059729");
+        assertResultsInOrder(query, "New York", "New Haven");
+    }
+
+    @Test public void addsDistanceToResponse() throws Exception {
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.add(PARAM_NAME, "{!radius=10 sort=true}40.7142691, -74.0059729");
+        assertResultDistancesInOrder(query);
+    }
+    
+    @Test public void addsDistanceToResponseWithoutRadius() throws Exception {
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.add(PARAM_NAME, "{!sort=true}40.7142691, -74.0059729");
+        assertResultDistancesInOrder(query);
     }
 
     private void addStandardFixtures() throws Exception {
