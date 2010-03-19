@@ -8,15 +8,15 @@ unopinionated, and semantic.
 
 First, clone the latest source from GitHub:
 
-    $ git clone git://github.com/outoftime/solr-spatial.git
+    $ git clone git://github.com/outoftime/solr-spatial-light.git
 
 If you don't have git and don't want to install it, you can also download a
-tarball or zip archive from http://github.com/outoftime/solr-spatial (look for
+tarball or zip archive from http://github.com/outoftime/solr-spatial-light (look for
 the "Download Source" link.
 
 Next, build the application and copy the jars into your solr installation:
 
-    $ cd solr-spatial
+    $ cd solr-spatial-light
     $ ant
     $ cp dist/solr-spatial-light-X.X.X.jar lib/lucene-spatial-2.9.1-dev.jar $SOLR_HOME/lib
 
@@ -51,7 +51,7 @@ And you're done.
 
 ### Performing spatial searches
 
-solr-spatial allows you to perform distance-based filtering and sorting. In any
+solr-spatial-light allows you to perform distance-based filtering and sorting. In any
 given search, you can filter, sort, or do both (or neither) based on distance
 from a given geographical location. The entire spatial component of your search
 is specified in the `spatial` parameter. Here's an example of what the spatial
@@ -59,7 +59,7 @@ parameter would look like:
 
     spatial={!radius=10.0 sort=true}lat:40.0,lng:-70.0
 
-This will instruct solr-spatial to only return results whose `"lat"` and `"lng"`
+This will instruct solr-spatial-light to only return results whose `"lat"` and `"lng"`
 fields contain coordinates within 10 miles of &lt;40,-70&gt;, and to sort the
 results in ascending order of distance from that location. Both the `radius` and
 the `sort` local parameters are optional; however, if neither is specified, then
