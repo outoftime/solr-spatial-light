@@ -1,6 +1,6 @@
 ## solr-spatial-light
 
-solr-spatial is a lightweight Solr plugin that exposes the basic geographical
+solr-spatial-light is a lightweight Solr plugin that exposes the basic geographical
 search capabilities of lucene-spatial. Its aim is to be unobtrusive,
 unopinionated, and semantic.
 
