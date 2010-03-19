@@ -8,4 +8,7 @@
     <suppress checks="MagicNumberCheck"
               files="Spatial.java"
               lines="121" />
+    <suppress checks="EmptyBlock"
+              files="SpatialQueryComponent.java"
+              lines="155" />
 </suppressions>

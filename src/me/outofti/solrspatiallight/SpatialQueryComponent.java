@@ -9,6 +9,8 @@ import java.util.HashMap;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.ConstantScoreQuery;
+import org.apache.lucene.search.DocIdSet;
+import org.apache.lucene.search.DocIdSetIterator;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.Sort;
 import org.apache.lucene.search.SortField;
@@ -112,11 +114,15 @@ public class SpatialQueryComponent extends SearchComponent {
 
             final Spatial spatial = new Spatial(qstr, localParams,
                                                 rb.req.getParams(), rb.req);
-            attachDistanceFilter(rb, spatial);
+            final DistanceFilter filter = spatial.getDistanceFilter();
+            eagerLoadDistances(rb, filter);
+            addDistancesToResponse(rb, filter);
+            attachDistanceFilter(rb, filter);
 
             if (localParams.getBool("sort", false)) {
                 attachSort(rb, spatial);
             }
+            addDistanceFilterToContext(rb, spatial);
         } catch (ParseException e) {
             throw new IOException(e);
         }
@@ -128,50 +134,71 @@ public class SpatialQueryComponent extends SearchComponent {
      * @param rb the response builder
      */
     @Override
-    public final void process(final ResponseBuilder rb) {
-        final DistanceFilter distanceFilter =
-            (DistanceFilter) rb.req.getContext().get("distanceFilter");
-        if (distanceFilter != null) {
-            final Map<String, Double> distancesById =
-                new HashMap<String, Double>();
-            final Map<Integer, Double> distances =
-                distanceFilter.getDistances();
-            final String uniqueKeyFieldName =
-                rb.req.getSchema().getUniqueKeyField().getName();
-            for (Integer i : distances.keySet()) {
-                try {
-                    final Document doc = rb.req.getSearcher().doc(i);
-                    // FIXME Should not assume "id" field is primary key
-                    distancesById.put(
-                            doc.getField(uniqueKeyFieldName).stringValue(),
-                            distances.get(i));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+    public final void process(final ResponseBuilder rb) { }
+
+    /**
+     * Eager load distances in filter.
+     *
+     * This ensures that even if the filter query is cached, distances are
+     * available for sorting and in the response.
+     *
+     * @param rb response builder
+     * @param filter distance filter
+     *
+     * @throws IOException on index read error
+     */
+    private void eagerLoadDistances(final ResponseBuilder rb,
+            final DistanceFilter filter) throws IOException {
+        DocIdSet docIdSet =
+            filter.getDocIdSet(rb.req.getSearcher().getReader());
+        for (final DocIdSetIterator i = docIdSet.iterator();
+                i.nextDoc() != DocIdSetIterator.NO_MORE_DOCS;) { }
+    }
+
+    /**
+     * Attach distances to response.
+     *
+     * @param rb response builder
+     * @param filter distance filter
+     */
+    private void addDistancesToResponse(final ResponseBuilder rb,
+                                              final DistanceFilter filter) {
+        final Map<String, Double> distancesById =
+            new HashMap<String, Double>();
+        final Map<Integer, Double> distances =
+            filter.getDistances();
+        final String uniqueKeyFieldName =
+            rb.req.getSchema().getUniqueKeyField().getName();
+        for (Integer i : distances.keySet()) {
+            try {
+                final Document doc = rb.req.getSearcher().doc(i);
+                distancesById.put(
+                        doc.getField(uniqueKeyFieldName).stringValue(),
+                        distances.get(i));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            rb.rsp.add("distances", distancesById);
         }
+        rb.rsp.add("distances", distancesById);
     }
 
     /**
      * Attach the distance filter to the query.
      *
      * @param rb      response builder
-     * @param spatial spatial query parser
+     * @param filter  distance filter
      *
      * @throws ParseException if query is malformed
      */
     private void attachDistanceFilter(final ResponseBuilder rb,
-                                            final Spatial spatial)
+                                      final DistanceFilter filter)
         throws ParseException {
         List<Query> filters = rb.getFilters();
         if (filters == null) {
             filters = new ArrayList<Query>();
             rb.setFilters(filters);
         }
-        final DistanceFilter distanceFilter = spatial.getDistanceFilter();
-        rb.req.getContext().put("distanceFilter", distanceFilter);
-        filters.add(new ConstantScoreQuery(spatial.getDistanceFilter()));
+        filters.add(new ConstantScoreQuery(filter));
     }
 
     /**
@@ -204,8 +231,24 @@ public class SpatialQueryComponent extends SearchComponent {
             }
             sortFields[i] = sortField;
             sortSpec.setSort(new Sort(sortFields));
-            System.out.println("");
         }
+    }
+
+    /**
+     * Add the distance filter to the request context.
+     *
+     * This makes it available to the process() method, so it can return the
+     * distances in the response.
+     *
+     * @param rb response builder
+     * @param spatial spatial query parser
+     *
+     * @throws ParseException if query is malformed
+     */
+    private void addDistanceFilterToContext(final ResponseBuilder rb,
+                                            final Spatial spatial)
+        throws ParseException {
+        rb.req.getContext().put("distanceFilter", spatial.getDistanceFilter());
     }
 
     /**

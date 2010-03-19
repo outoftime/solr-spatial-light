@@ -12,9 +12,18 @@ import org.apache.solr.common.SolrDocumentList;
 import static org.junit.Assert.*;
 
 public class SpatialSearchTest extends TestHelper {
-    private static String STANDARD_LAT_FIELD = "lat";
-    private static String STANDARD_LNG_FIELD = "lng";
-    private static String PARAM_NAME = "spatial";
+    private static final String STANDARD_LAT_FIELD = "lat";
+    private static final String STANDARD_LNG_FIELD = "lng";
+    private static final String PARAM_NAME = "spatial";
+
+
+    private static boolean firstRun = true;
+    public static void firstRunComplete() {
+        firstRun = false;
+    }
+    public static boolean isFirstRun() {
+        return firstRun;
+    }
 
     @Test public void simpleSpatialSearch() throws Exception {
         addStandardFixtures();
@@ -93,7 +102,19 @@ public class SpatialSearchTest extends TestHelper {
         query.add(PARAM_NAME, "{!radius=10 sort=true}40.7142691, -74.0059729");
         assertResultDistancesInOrder(query);
     }
-    
+
+    /* Regression test for problem with empty distances the second time an
+     * identical search is performed. */
+    @Test public void addsDistanceToResponseInSecondSearch() throws Exception {
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.add(PARAM_NAME, "{!radius=10 sort=true}40.7142691, -74.0059729");
+        getServer().query(query);
+        firstRunComplete();
+        getServer().query(query);
+        assertResultDistancesInOrder(query);
+    }
+
     @Test public void addsDistanceToResponseWithoutRadius() throws Exception {
         addStandardFixtures();
         final SolrQuery query = new SolrQuery();
