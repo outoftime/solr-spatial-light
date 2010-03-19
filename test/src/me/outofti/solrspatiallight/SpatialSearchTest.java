@@ -121,6 +121,14 @@ public class SpatialSearchTest extends TestHelper {
         query.add(PARAM_NAME, "{!sort=true}40.7142691, -74.0059729");
         assertResultDistancesInOrder(query);
     }
+    
+    @Test public void onlyAddsDistancesFromResults() throws Exception {
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.add(PARAM_NAME, "{!sort=true}40.7142691, -74.0059729");
+        query.setRows(2);
+        assertResultDistancesInOrder(query);
+    }
 
     private void addStandardFixtures() throws Exception {
         addStandardFixtures(STANDARD_LAT_FIELD, STANDARD_LNG_FIELD);

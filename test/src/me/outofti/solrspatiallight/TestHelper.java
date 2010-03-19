@@ -69,6 +69,7 @@ abstract class TestHelper {
         final Map distances =
             (Map) response.getResponse().get("distances");
         Double lastDistance = null;
+        assertEquals("Expected " + docs.size() + " distances", docs.size(), distances.size());
         for(int i = 0; i < docs.size(); i++) {
             final Double distance = new Double(distances.get(docs.get(i).getFieldValue("id")).toString());
             assertNotNull(distance);

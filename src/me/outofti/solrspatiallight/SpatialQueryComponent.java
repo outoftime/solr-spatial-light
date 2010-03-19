@@ -2,6 +2,7 @@ package me.outofti.solrspatiallight;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -116,7 +117,7 @@ public class SpatialQueryComponent extends SearchComponent {
                                                 rb.req.getParams(), rb.req);
             final DistanceFilter filter = spatial.getDistanceFilter();
             eagerLoadDistances(rb, filter);
-            addDistancesToResponse(rb, filter);
+            addDistancesToContext(rb, filter);
             attachDistanceFilter(rb, filter);
 
             if (localParams.getBool("sort", false)) {
@@ -134,7 +135,9 @@ public class SpatialQueryComponent extends SearchComponent {
      * @param rb the response builder
      */
     @Override
-    public final void process(final ResponseBuilder rb) { }
+    public final void process(final ResponseBuilder rb) {
+        addDistancesToResponse(rb);
+    }
 
     /**
      * Eager load distances in filter.
@@ -161,15 +164,31 @@ public class SpatialQueryComponent extends SearchComponent {
      * @param rb response builder
      * @param filter distance filter
      */
-    private void addDistancesToResponse(final ResponseBuilder rb,
-                                              final DistanceFilter filter) {
-        final Map<String, Double> distancesById =
-            new HashMap<String, Double>();
+    private void addDistancesToContext(final ResponseBuilder rb,
+                                       final DistanceFilter filter) {
         final Map<Integer, Double> distances =
             filter.getDistances();
+        rb.req.getContext().put("distances", distances);
+    }
+
+    /**
+     * Add distance map to response.
+     *
+     * Pulls the map of all documents to distances out of the context,
+     * and creates a map of primary key to distance only for actual results of
+     * search. Puts that map in the result object.
+     *
+     * @param rb response builder
+     */
+    private void addDistancesToResponse(final ResponseBuilder rb) {
+        final Map<?, ?> distances =
+            (Map<?, ?>) rb.req.getContext().get("distances");
+        final Map<String, Object> distancesById = new HashMap<String, Object>();
         final String uniqueKeyFieldName =
             rb.req.getSchema().getUniqueKeyField().getName();
-        for (Integer i : distances.keySet()) {
+        for (final Iterator<Integer> it = rb.getResults().docList.iterator();
+                it.hasNext();) {
+            final Integer i = it.next();
             try {
                 final Document doc = rb.req.getSearcher().doc(i);
                 distancesById.put(
