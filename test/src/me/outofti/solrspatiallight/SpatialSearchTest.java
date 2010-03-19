@@ -47,6 +47,15 @@ public class SpatialSearchTest extends TestHelper {
                              "Yonkers");
     }
 
+    @Test public void sortingWithOtherFilters() throws Exception {
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.add("spatial", "{!sort=true}40.7142691, -74.0059729");
+        getServer().query(query);
+        query.addFilterQuery("rating:4.0");
+        assertResultsInOrder(query, "New York", "Staten Island", "Yonkers");
+    }
+
     @Test public void specifiedLimit() throws Exception {
         addStandardFixtures();
         final SolrQuery query = new SolrQuery();
