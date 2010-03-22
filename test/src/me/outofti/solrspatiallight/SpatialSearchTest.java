@@ -139,6 +139,13 @@ public class SpatialSearchTest extends TestHelper {
         assertResultDistancesInOrder(query);
     }
 
+    @Test public void searchWithoutSpatial() throws Exception {
+        addStandardFixtures();
+        final SolrQuery query = new SolrQuery();
+        query.addFilterQuery("rating:4.0");
+        assertResults(query, "New York", "Staten Island", "Yonkers");
+    }
+
     private void addStandardFixtures() throws Exception {
         addStandardFixtures(STANDARD_LAT_FIELD, STANDARD_LNG_FIELD);
     }

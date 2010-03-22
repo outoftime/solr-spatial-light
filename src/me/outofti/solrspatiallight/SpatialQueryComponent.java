@@ -123,7 +123,6 @@ public class SpatialQueryComponent extends SearchComponent {
             if (localParams.getBool("sort", false)) {
                 attachSort(rb, spatial);
             }
-            addDistanceFilterToContext(rb, spatial);
         } catch (ParseException e) {
             throw new IOException(e);
         }
@@ -183,22 +182,25 @@ public class SpatialQueryComponent extends SearchComponent {
     private void addDistancesToResponse(final ResponseBuilder rb) {
         final Map<?, ?> distances =
             (Map<?, ?>) rb.req.getContext().get("distances");
-        final Map<String, Object> distancesById = new HashMap<String, Object>();
-        final String uniqueKeyFieldName =
-            rb.req.getSchema().getUniqueKeyField().getName();
-        for (final Iterator<Integer> it = rb.getResults().docList.iterator();
-                it.hasNext();) {
-            final Integer i = it.next();
-            try {
-                final Document doc = rb.req.getSearcher().doc(i);
-                distancesById.put(
-                        doc.getField(uniqueKeyFieldName).stringValue(),
-                        distances.get(i));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        if (distances != null) {
+            final Map<String, Object> distancesById =
+                new HashMap<String, Object>();
+            final String uniqueKeyFieldName =
+                rb.req.getSchema().getUniqueKeyField().getName();
+            for (final Iterator<Integer> it =
+                    rb.getResults().docList.iterator(); it.hasNext();) {
+                final Integer i = it.next();
+                try {
+                    final Document doc = rb.req.getSearcher().doc(i);
+                    distancesById.put(
+                            doc.getField(uniqueKeyFieldName).stringValue(),
+                            distances.get(i));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+            rb.rsp.add("distances", distancesById);
         }
-        rb.rsp.add("distances", distancesById);
     }
 
     /**
@@ -251,23 +253,6 @@ public class SpatialQueryComponent extends SearchComponent {
             sortFields[i] = sortField;
             sortSpec.setSort(new Sort(sortFields));
         }
-    }
-
-    /**
-     * Add the distance filter to the request context.
-     *
-     * This makes it available to the process() method, so it can return the
-     * distances in the response.
-     *
-     * @param rb response builder
-     * @param spatial spatial query parser
-     *
-     * @throws ParseException if query is malformed
-     */
-    private void addDistanceFilterToContext(final ResponseBuilder rb,
-                                            final Spatial spatial)
-        throws ParseException {
-        rb.req.getContext().put("distanceFilter", spatial.getDistanceFilter());
     }
 
     /**
